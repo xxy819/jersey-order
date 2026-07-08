@@ -73,7 +73,7 @@ function LangSwitcher({ langIndex, onSwitch }) {
       <div>
         {user ? (
           <span className="text-xs text-gray-500">
-            {user.name} · <button onClick={logout} className="text-blue-600 hover:underline">退出</button>
+            {user.name} · <a href="/my-orders" className="text-blue-600 hover:underline">我的订单</a> · <button onClick={logout} className="text-gray-400 hover:text-gray-600">退出</button>
           </span>
         ) : (
           <a href="/login" className="text-xs text-blue-600 hover:underline">登录 / 注册</a>
@@ -256,6 +256,7 @@ export default function OrderPage() {
           customer_city: customer.city,
           customer_address: customer.street,
           customer_postal_code: customer.postalCode,
+          user_id: (() => { try { const u = JSON.parse(localStorage.getItem('jersey_user') || '{}'); return u.id || '' } catch { return '' } })(),
           note: customer.note,
           items,
           subtotal: cartSubtotal,

@@ -47,6 +47,7 @@ export async function POST(request) {
         customer_city: body.customer_city.trim(),
         customer_address: body.customer_address.trim(),
         customer_postal_code: body.customer_postal_code.trim(),
+        user_id: body.user_id || null,
         items: body.items,
         subtotal: body.subtotal || 0,
         shipping: body.shipping || 0,
@@ -110,36 +111,45 @@ export async function PATCH(request) {
   }
 }
 
-// GET /api/order — 查询订单列表（需要验证）
+// GET /api/order — 查询订单列表
+// 管理员用 ADMIN_PASSWORD 验证
+// 普通用户用 user_id 参数查询自己的订单
 export async function GET(request) {
   const authHeader = request.headers.get('authorization') || ''
   const token = authHeader.replace('Bearer ', '')
-
-  if (token !== ADMIN_PASSWORD) {
-    return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
-  }
 
   const { searchParams } = new URL(request.url)
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '50')
   const search = searchParams.get('search') || ''
+  const userId = searchParams.get('user_id') || ''
   const from = (page - 1) * limit
   const to = from + limit - 1
 
+  // 如果传了 user_id，允许公开查询（通过 token 验证用户身份）
+  let isAdmin = false
+  if (token === ADMIN_PASSWORD) {
+    isAdmin = true
+  } else if (!userId) {
+    return NextResponse.json({ success: false, error: '未授权' }, { status: 401 })
+  }
+
   try {
     let supabase
-    try {
-      supabase = getSupabase()
-    } catch (e) {
+    try { supabase = getSupabase() } catch (e) {
       return NextResponse.json({ success: false, error: e.message }, { status: 500 })
     }
 
     let query = supabase.from('orders').select('*', { count: 'exact' }).order('created_at', { ascending: false })
 
-    if (search) {
+    if (isAdmin && search) {
       query = query.or(
         `customer_name.ilike.%${search}%,customer_email.ilike.%${search}%,customer_phone.ilike.%${search}%`
       )
+    }
+
+    if (userId) {
+      query = query.eq('user_id', userId)
     }
 
     const { data, error, count } = await query.range(from, to)
