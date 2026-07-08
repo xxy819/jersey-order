@@ -69,14 +69,23 @@ export async function POST(request) {
   }
 }
 
-// PATCH /api/order — 更新订单（如付款截图）
+// PATCH /api/order — 更新订单（付款截图 / 状态 / 快递单号）
 export async function PATCH(request) {
   try {
     const body = await request.json()
-    const { order_id, payment_screenshot } = body
+    const { order_id, payment_screenshot, status, tracking_number } = body
 
-    if (!order_id || !payment_screenshot) {
-      return NextResponse.json({ success: false, error: '参数不完整' }, { status: 400 })
+    if (!order_id) {
+      return NextResponse.json({ success: false, error: '缺少订单编号' }, { status: 400 })
+    }
+
+    const updateData = {}
+    if (payment_screenshot !== undefined) updateData.payment_screenshot = payment_screenshot
+    if (status !== undefined) updateData.status = status
+    if (tracking_number !== undefined) updateData.tracking_number = tracking_number
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ success: false, error: '没有需要更新的字段' }, { status: 400 })
     }
 
     let supabase
@@ -86,7 +95,7 @@ export async function PATCH(request) {
 
     const { error } = await supabase
       .from('orders')
-      .update({ payment_screenshot })
+      .update(updateData)
       .eq('id', order_id)
 
     if (error) {

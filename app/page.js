@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { PRODUCTS, CATEGORIES, getProductsByCategory, ADDONS, CUSTOM_PRICE, calcShipping, SHIPPING_THRESHOLD, SHIPPING_FEE, getSizeOptions, getSizeChart, SIZE_CHARTS, PAYPAL_EMAIL, getProduct, calcItemPrice } from '@/lib/config'
 import { getText, getStyleLabel, LANG_CODES, LANG_NAMES } from '@/lib/locales'
 import { useLang } from '@/lib/LangContext'
@@ -53,13 +53,39 @@ function LangSelector({ onSelect }) {
 }
 
 function LangSwitcher({ langIndex, onSwitch }) {
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    try {
+      const u = localStorage.getItem('jersey_user')
+      if (u) setUser(JSON.parse(u))
+    } catch {}
+  }, [])
+
+  const logout = () => {
+    localStorage.removeItem('jersey_token')
+    localStorage.removeItem('jersey_user')
+    setUser(null)
+  }
+
   return (
-    <div className="flex gap-1 justify-end mb-2">
-      {LANG_CODES.map((code, i) => (
-        <button key={code} onClick={() => onSwitch(code)}
-          className={`text-xs px-2 py-0.5 rounded ${i === langIndex ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
-        >{LANG_NAMES[i]}</button>
-      ))}
+    <div className="flex items-center justify-between mb-2">
+      <div>
+        {user ? (
+          <span className="text-xs text-gray-500">
+            {user.name} · <button onClick={logout} className="text-blue-600 hover:underline">退出</button>
+          </span>
+        ) : (
+          <a href="/login" className="text-xs text-blue-600 hover:underline">登录 / 注册</a>
+        )}
+      </div>
+      <div className="flex gap-1">
+        {LANG_CODES.map((code, i) => (
+          <button key={code} onClick={() => onSwitch(code)}
+            className={`text-xs px-2 py-0.5 rounded ${i === langIndex ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+          >{LANG_NAMES[i]}</button>
+        ))}
+      </div>
     </div>
   )
 }
@@ -298,9 +324,18 @@ export default function OrderPage() {
             <div className="text-3xl font-bold mt-1">{submitted.total.toFixed(2)} €</div>
           </div>
           <div className="border-t pt-4 mt-4">
-            <span className="text-sm text-gray-400">{t('paypal_instruction')}</span>
-            <div className="text-lg font-medium mt-1">{PAYPAL_EMAIL}</div>
-            <p className="text-sm text-gray-500 mt-2">{t('paypal_note')}</p>
+            <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4">
+              <div className="flex items-start gap-2">
+                <span className="text-2xl shrink-0">⚠️</span>
+                <div>
+                  <p className="text-sm font-bold text-red-700 mb-1">{t('paypal_instruction')}</p>
+                  <div className="text-base font-bold text-red-800 bg-white rounded-lg px-3 py-2 border border-red-200 inline-block mb-2">
+                    {PAYPAL_EMAIL}
+                  </div>
+                  <p className="text-sm text-red-600 font-semibold leading-relaxed">{t('paypal_note')}</p>
+                </div>
+              </div>
+            </div>
           </div>
           {/* 付款截图上传 */}
           <div className="border-t pt-4 mt-4">
@@ -405,21 +440,64 @@ export default function OrderPage() {
 
           {/* 商品信息 */}
           <div className="space-y-3">
-            {/* 商品选择 */}
+            {/* 商品选择：分类 + 商品 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('select_product')}</label>
-              <select value={current.productId}
-                onChange={e => setCurrent(p => ({ ...p, productId: e.target.value, size: '' }))}
-                className="w-full border rounded-lg px-3 py-2 text-sm">
-                <option value="">{t('select_placeholder')}</option>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t('select_product')}</label>
+              {/* 分类按钮 */}
+              <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
                 {CATEGORIES.map(cat => (
-                  <optgroup key={cat.id} label={t(cat.labelKey)}>
-                    {getProductsByCategory(cat.id).map(p => (
-                      <option key={p.id} value={p.id}>{styleLabel(p.id)} — {p.price}€</option>
-                    ))}
-                  </optgroup>
+                  <button key={cat.id}
+                    onClick={() => setCurrent(p => ({ ...p, productId: '', size: '' }))}
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                      current.productId && getProduct(current.productId)?.categoryKey === cat.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >{t(cat.labelKey)}</button>
                 ))}
-              </select>
+              </div>
+              {/* 商品按钮 */}
+              {(() => {
+                const selectedCat = current.productId ? getProduct(current.productId)?.categoryKey : null
+                const catProducts = selectedCat ? getProductsByCategory(selectedCat) : []
+                if (!selectedCat) {
+                  // 没选分类时显示所有商品
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {PRODUCTS.map(p => (
+                        <button key={p.id}
+                          onClick={() => setCurrent(prev => ({ ...prev, productId: p.id, size: '' }))}
+                          className={`border rounded-lg px-3 py-2.5 text-left text-sm transition ${
+                            current.productId === p.id
+                              ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="font-medium">{styleLabel(p.id)}</div>
+                          <div className="text-blue-600 font-semibold mt-0.5">{p.price}€</div>
+                        </button>
+                      ))}
+                    </div>
+                  )
+                }
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {getProductsByCategory(selectedCat).map(p => (
+                      <button key={p.id}
+                        onClick={() => setCurrent(prev => ({ ...prev, productId: p.id, size: '' }))}
+                        className={`border rounded-lg px-3 py-2.5 text-left text-sm transition ${
+                          current.productId === p.id
+                            ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="font-medium">{styleLabel(p.id)}</div>
+                        <div className="text-blue-600 font-semibold mt-0.5">{p.price}€</div>
+                      </button>
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
 
             {/* 尺码 */}

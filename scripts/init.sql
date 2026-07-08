@@ -21,15 +21,27 @@ CREATE TABLE IF NOT EXISTS orders (
   shipping DECIMAL(10,2) DEFAULT 0,
   total_amount DECIMAL(10,2) NOT NULL,
   note TEXT DEFAULT '',
-  status TEXT DEFAULT 'pending'
+  status TEXT DEFAULT 'pending',
+  tracking_number TEXT DEFAULT '',
+  user_id UUID DEFAULT NULL
 );
 
--- 2. 创建索引方便搜索
+-- 2. 创建用户表
+CREATE TABLE IF NOT EXISTS users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL
+);
+
+-- 3. 创建索引方便搜索
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_customer_name ON orders(customer_name);
 CREATE INDEX IF NOT EXISTS idx_orders_customer_email ON orders(customer_email);
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
 
--- 3. 创建图片存储桶
+-- 4. 创建图片存储桶
 -- 在 Dashboard > Storage > New bucket
 -- Name: product-images
 -- Public bucket: ON

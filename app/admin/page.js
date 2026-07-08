@@ -245,6 +245,61 @@ export default function AdminPage() {
                     <div className="flex justify-between font-bold border-t pt-1"><span>{t('admin_grand_total')}</span><span>{order.total_amount?.toFixed(2)}€</span></div>
                   </div>
 
+                  {/* 管理操作 */}
+                  <div className="border-t pt-3 space-y-2">
+                    {/* 确认收款 */}
+                    {order.status === 'pending' && (
+                      <button onClick={async () => {
+                        if (!confirm('确认收到付款？')) return
+                        try {
+                          const res = await fetch('/api/order', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ order_id: order.id, status: 'paid' }),
+                          })
+                          const d = await res.json()
+                          if (d.success) { fetchOrders(search); setExpandedId(null) }
+                          else alert(d.error)
+                        } catch(e) { alert('操作失败') }
+                      }}
+                        className="w-full bg-green-600 text-white text-sm py-2 rounded-lg hover:bg-green-700 font-medium">
+                        ✅ 确认收到付款
+                      </button>
+                    )}
+                    {/* 快递单号 */}
+                    <div className="flex gap-2">
+                      <input type="text" id={`tracking-${order.id}`}
+                        defaultValue={order.tracking_number || ''}
+                        placeholder="输入快递单号"
+                        className="flex-1 border rounded-lg px-3 py-1.5 text-sm" />
+                      <button onClick={async () => {
+                        const input = document.getElementById(`tracking-${order.id}`)
+                        const tn = input?.value?.trim()
+                        if (!tn) return alert('请输入快递单号')
+                        try {
+                          const res = await fetch('/api/order', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ order_id: order.id, tracking_number: tn }),
+                          })
+                          const d = await res.json()
+                          if (d.success) { fetchOrders(search) }
+                          else alert(d.error)
+                        } catch(e) { alert('保存失败') }
+                      }}
+                        className="bg-blue-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-blue-700 shrink-0">
+                        保存单号
+                      </button>
+                    </div>
+                    {/* 物流查询链接 */}
+                    {order.tracking_number && (
+                      <a href={`https://xxy819.github.io/track-website/?tracking=${encodeURIComponent(order.tracking_number)}`}
+                        target="_blank" rel="noreferrer"
+                        className="block text-center bg-gray-100 text-gray-700 text-sm py-1.5 rounded-lg hover:bg-gray-200"
+                      >📦 查看物流 ({order.tracking_number})</a>
+                    )}
+                  </div>
+
                   {order.payment_screenshot && (
                     <div>
                       <span className="text-sm font-semibold">{t('upload_payment_proof')}</span>
