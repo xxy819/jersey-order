@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { PRODUCTS, CATEGORIES, getProductsByCategory, ADDONS, CUSTOM_PRICE, calcShipping, SHIPPING_THRESHOLD, SHIPPING_FEE, getSizeOptions, getSizeChart, SIZE_CHARTS, PAYPAL_EMAIL, getProduct, calcItemPrice } from '@/lib/config'
+import { PRODUCTS, CATEGORIES, getProductsByCategory, ADDONS, CUSTOM_PRICE, calcShipping, SHIPPING_THRESHOLD, SHIPPING_FEE, getSizeOptions, getSizeChart, SIZE_CHARTS, PAYPAL_EMAIL, getProduct, calcItemPrice, calcPatchPrice, calcSizeSurcharge } from '@/lib/config'
 import { getText, getStyleLabel, LANG_CODES, LANG_NAMES } from '@/lib/locales'
 import { useLang } from '@/lib/LangContext'
 
@@ -11,11 +11,10 @@ function emptyItem() {
     productId: '', size: '', quantity: 1,
     customName: '', customNumber: '', hasCustom: false,
     addons: [],
-    patchCount: 1,         // 1 个或 2 个补丁
-    patchPosition: 'left', // left / right / both
-    patchImage: null,
-    patchPreview: null,
-    patchUrl: null,
+    patchCount: 1, patchPosition: 'left',
+    patchImage: null, patchPreview: null, patchUrl: null,
+    customPrice: '',   // 其他商品自定义价格
+    customNote: '',    // 其他商品备注
   }
 }
 
@@ -113,23 +112,31 @@ export default function OrderPage() {
   const curProduct = getProduct(current.productId)
   const curChartId = curProduct?.chartId
   const curSizeOpts = curProduct ? getSizeOptions(curChartId) : []
-  // 当前选中附加项的总价
-  // 补丁价格按数量计算 1€/个，其他附加项固定价格
+  // 当前选中附加项的总价（不含补丁，补丁单独按数量算）
   const curAddonCost = (current.addons || []).reduce((sum, aid) => {
-    if (aid === 'patch') return sum + current.patchCount * (ADDONS.patch?.price || 1)
+    if (aid === 'patch') return sum
     const a = ADDONS[aid]; return sum + (a ? a.price : 0)
   }, 0)
   const curCustomCost = current.hasCustom ? CUSTOM_PRICE : 0
-  const curUnitPrice = curProduct ? (curProduct.price + curAddonCost + curCustomCost) : 0
+  const curSizeSurcharge = curProduct && curProduct.chartId ? calcSizeSurcharge(current.size, curProduct.chartId) : 0
+  const curPatchCost = (current.addons || []).includes('patch') ? calcPatchPrice(current.patchCount || 1) : 0
+  const curUnitPrice = curProduct
+    ? (curProduct.id === 'other' ? (parseFloat(current.customPrice) || 0)
+      : curProduct.price + curSizeSurcharge + curAddonCost + curPatchCost + curCustomCost)
+    : 0
   const curSubtotal = curUnitPrice * current.quantity
 
   // 购物车统计
   const cartSubtotal = cart.reduce((sum, item) => {
     const prod = getProduct(item.productId)
     if (!prod) return sum
+    if (prod.id === 'other') {
+      return sum + (parseFloat(item.customPrice) || 0) * item.quantity
+    }
     let up = prod.price
+    up += calcSizeSurcharge(item.size, prod.chartId)
     for (const aid of (item.addons || [])) {
-      if (aid === 'patch') up += (item.patchCount || 1) * (ADDONS.patch?.price || 1)
+      if (aid === 'patch') up += calcPatchPrice(item.patchCount || 1)
       else { const a = ADDONS[aid]; if (a) up += a.price }
     }
     if (item.hasCustom) up += CUSTOM_PRICE
@@ -221,11 +228,16 @@ export default function OrderPage() {
           if (data.url) patchUrl = data.url
         }
         let up = prod ? prod.price : 0
-        for (const aid of (item.addons || [])) {
-          if (aid === 'patch') up += (item.patchCount || 1) * (ADDONS.patch?.price || 1)
-          else { const a = ADDONS[aid]; if (a) up += a.price }
+        if (prod?.id === 'other') {
+          up = parseFloat(item.customPrice) || 0
+        } else {
+          up += calcSizeSurcharge(item.size, prod?.chartId)
+          for (const aid of (item.addons || [])) {
+            if (aid === 'patch') up += calcPatchPrice(item.patchCount || 1)
+            else { const a = ADDONS[aid]; if (a) up += a.price }
+          }
+          if (item.hasCustom) up += CUSTOM_PRICE
         }
-        if (item.hasCustom) up += CUSTOM_PRICE
         return {
           image_url: imageUrl,
           product_id: item.productId,
@@ -239,6 +251,8 @@ export default function OrderPage() {
           patch_count: item.patchCount || 1,
           patch_position: item.patchPosition || 'left',
           patch_url: patchUrl,
+          custom_price: item.customPrice || '',
+          custom_note: item.customNote || '',
           unit_price: up,
           subtotal: up * item.quantity,
         }
@@ -501,6 +515,26 @@ export default function OrderPage() {
               })()}
             </div>
 
+            {/* 其他商品：自定义价格 + 备注 */}
+            {curProduct?.id === 'other' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">价格 € *</label>
+                  <input type="number" step="0.01" min="0" value={current.customPrice}
+                    onChange={e => setCurrent(p => ({ ...p, customPrice: e.target.value }))}
+                    placeholder="输入商品价格"
+                    className="w-full border rounded-lg px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                  <textarea value={current.customNote}
+                    onChange={e => setCurrent(p => ({ ...p, customNote: e.target.value }))}
+                    placeholder="填写规格、尺寸等说明"
+                    rows={2} className="w-full border rounded-lg px-3 py-2 text-sm resize-none" />
+                </div>
+              </>
+            )}
+
             {/* 尺码 */}
             {curProduct && curChartId && (
               <div>
@@ -660,9 +694,18 @@ export default function OrderPage() {
           <div className="space-y-3">
             {cart.map((item, idx) => {
               const prod = getProduct(item.productId)
-              let up = prod ? prod.price : 0
-              for (const aid of (item.addons || [])) { const a = ADDONS[aid]; if (a) up += a.price }
-              if (item.hasCustom) up += CUSTOM_PRICE
+              let up = 0
+              if (prod?.id === 'other') {
+                up = parseFloat(item.customPrice) || 0
+              } else {
+                up = prod ? prod.price : 0
+                up += calcSizeSurcharge(item.size, prod?.chartId)
+                for (const aid of (item.addons || [])) {
+                  if (aid === 'patch') up += calcPatchPrice(item.patchCount || 1)
+                  else { const a = ADDONS[aid]; if (a) up += a.price }
+                }
+                if (item.hasCustom) up += CUSTOM_PRICE
+              }
               const st = up * item.quantity
               const sl = prod ? styleLabel(item.productId) : ''
               const addonLabels = (item.addons || []).map(aid => {
@@ -672,6 +715,7 @@ export default function OrderPage() {
                 }
                 const a = ADDONS[aid]; return a ? t(a.labelKey) : aid
               }).join(' + ')
+              const otherNote = item.customNote ? `📝 ${item.customNote}` : ''
               return (
                 <div key={idx} className="flex gap-3 items-center border rounded-lg p-3">
                   {item.imagePreview && <img src={item.imagePreview} alt="" className="w-16 h-16 object-cover rounded" />}
@@ -681,6 +725,7 @@ export default function OrderPage() {
                       {item.size && `${item.size} / `}×{item.quantity}
                       {item.hasCustom && ` / ${item.customName || '?'} #${item.customNumber || '?'}`}
                       {addonLabels && ` / ${addonLabels}`}
+                      {otherNote && <div className="text-gray-400 text-xs mt-0.5">{otherNote}</div>}
                     </div>
                     <div className="font-semibold">{st.toFixed(2)}€</div>
                   </div>
