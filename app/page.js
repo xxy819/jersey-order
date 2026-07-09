@@ -476,22 +476,10 @@ export default function OrderPage() {
                 const selectedCat = current.productId ? getProduct(current.productId)?.categoryKey : null
                 const catProducts = selectedCat ? getProductsByCategory(selectedCat) : []
                 if (!selectedCat) {
-                  // 没选分类时显示所有商品
+                  // 没选分类时显示提示
                   return (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {PRODUCTS.map(p => (
-                        <button key={p.id}
-                          onClick={() => setCurrent(prev => ({ ...prev, productId: p.id, size: '' }))}
-                          className={`border rounded-lg px-3 py-2.5 text-left text-sm transition ${
-                            current.productId === p.id
-                              ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <div className="font-medium">{styleLabel(p.id)}</div>
-                          <div className="text-blue-600 font-semibold mt-0.5">{p.price}€</div>
-                        </button>
-                      ))}
+                    <div className="text-center py-8 text-gray-400 text-sm">
+                      请先点击上方分类，再选择商品
                     </div>
                   )
                 }
@@ -507,7 +495,7 @@ export default function OrderPage() {
                         }`}
                       >
                         <div className="font-medium">{styleLabel(p.id)}</div>
-                        <div className="text-blue-600 font-semibold mt-0.5">{p.price}€</div>
+                        <div className="text-blue-600 font-semibold mt-0.5">{p.id === 'other' ? '询价' : p.price + '€'}</div>
                       </button>
                     ))}
                   </div>
@@ -644,17 +632,17 @@ export default function OrderPage() {
                         <input type="radio" name="patchPos" checked={current.patchPosition === 'left'}
                           onChange={() => setCurrent(p => ({ ...p, patchPosition: 'left' }))}
                           className="w-3.5 h-3.5" />
-                        <span>左袖</span>
+                        <span>{t('patch_left')}</span>
                       </label>
                       <label className="inline-flex items-center gap-1 text-sm cursor-pointer">
                         <input type="radio" name="patchPos" checked={current.patchPosition === 'right'}
                           onChange={() => setCurrent(p => ({ ...p, patchPosition: 'right' }))}
                           className="w-3.5 h-3.5" />
-                        <span>右袖</span>
+                        <span>{t('patch_right')}</span>
                       </label>
                     </>
                   ) : (
-                    <span className="text-sm text-gray-500">左袖 + 右袖</span>
+                    <span className="text-sm text-gray-500">{t('patch_both')}</span>
                   )}
                 </div>
                 {/* 上传补丁图片 */}
@@ -720,8 +708,8 @@ export default function OrderPage() {
               const sl = prod ? styleLabel(item.productId) : ''
               const addonLabels = (item.addons || []).map(aid => {
                 if (aid === 'patch') {
-                  const pos = item.patchPosition === 'both' ? '左+右' : (item.patchPosition === 'left' ? '左袖' : '右袖')
-                  return `${item.patchCount || 1}补丁(${pos})`
+                  const posKey = item.patchPosition === 'both' ? 'patch_both' : (item.patchPosition === 'left' ? 'patch_left' : 'patch_right')
+                  return `${t('patch_count', { n: String(item.patchCount || 1) })}(${t(posKey)})`
                 }
                 const a = ADDONS[aid]; return a ? t(a.labelKey) : aid
               }).join(' + ')
@@ -822,7 +810,8 @@ export default function OrderPage() {
         </div>
 
         <button onClick={submitOrder} disabled={submitting}
-          className="mt-4 w-full bg-green-600 text-white px-8 py-3 rounded-lg font-medium text-lg hover:bg-green-700 disabled:opacity-50 transition">
+          className="mt-4 w-full bg-green-600 text-white px-8 py-3 rounded-lg font-medium text-lg hover:bg-green-700 disabled:opacity-70 transition flex items-center justify-center gap-2">
+          {submitting && <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>}
           {submitting ? t('submitting') : t('submit_order')}</button>
       </section>
 

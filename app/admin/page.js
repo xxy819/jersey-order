@@ -68,30 +68,17 @@ export default function AdminPage() {
   const handleSearch = (e) => { e.preventDefault(); fetchOrders(search) }
 
   const exportCSV = () => {
-    const headers = [
-      t('order_id'), t('admin_time'), t('name'), t('email'), t('phone'),
-      t('country'), t('region'), t('city'), t('street'), t('postal_code'),
-      t('admin_subtotal'), t('admin_shipping'), t('admin_grand_total'), t('admin_status'), t('note')
-    ]
-    // Simple key-based export for sorting
-    const keyMap = {
-      [t('order_id')]: 'id', [t('admin_time')]: 'created_at',
-      [t('name')]: 'customer_name', [t('email')]: 'customer_email',
-      [t('phone')]: 'customer_phone', [t('country')]: 'customer_country',
-      [t('region')]: 'customer_region', [t('city')]: 'customer_city',
-      [t('street')]: 'customer_address', [t('postal_code')]: 'customer_postal_code',
-      [t('admin_subtotal')]: 'subtotal', [t('admin_shipping')]: 'shipping',
-      [t('admin_grand_total')]: 'total_amount', [t('admin_status')]: 'status', [t('note')]: 'note',
-    }
+    const headers = ['Order ID', 'Time', 'Name', 'Email', 'Phone',
+      'Country', 'Region', 'City', 'Address', 'Postal Code',
+      'Subtotal', 'Shipping', 'Grand Total', 'Status', 'Note']
     const rows = [headers]
     orders.forEach(o => {
-      rows.push(headers.map(h => {
-        const key = keyMap[h] || h
-        let val = o[key]
-        if (key === 'created_at') val = o.created_at
-        if (val === null || val === undefined) val = ''
-        return String(val)
-      }))
+      rows.push([
+        o.id, o.created_at, o.customer_name, o.customer_email,
+        o.customer_phone || '', o.customer_country || '', o.customer_region || '', o.customer_city || '',
+        o.customer_address, o.customer_postal_code || '',
+        o.subtotal || '0', o.shipping || '0', o.total_amount, o.status, o.note || '',
+      ].map(v => String(v)))
     })
     const csv = rows.map(r => r.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
