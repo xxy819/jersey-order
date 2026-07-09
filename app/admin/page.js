@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ADMIN_PASSWORD } from '@/lib/config'
 import { getText, LANG_CODES, LANG_NAMES } from '@/lib/locales'
 import { useLang } from '@/lib/LangContext'
 
@@ -46,13 +45,24 @@ export default function AdminPage() {
     setLoading(false)
   }, [password])
 
-  const login = () => {
-    if (password === ADMIN_PASSWORD) {
-      setLoggedIn(true)
-      fetchOrders()
-    } else {
+  const login = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/order?page=1&limit=1', {
+        headers: { Authorization: `Bearer ${password}` },
+      })
+      const data = await res.json()
+      if (data.success) {
+        setLoggedIn(true)
+        setOrders(data.orders || [])
+        setTotal(data.total || 0)
+      } else {
+        alert(data.error || t('admin_wrong_password'))
+      }
+    } catch (_) {
       alert(t('admin_wrong_password'))
     }
+    setLoading(false)
   }
 
   const handleSearch = (e) => { e.preventDefault(); fetchOrders(search) }
