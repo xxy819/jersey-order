@@ -51,12 +51,22 @@ export default function SourcingPage() {
       {activeCat && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {SOURCING_DATA.find(c => c.id === activeCat)?.subcategories.map(sub => (
-            <a key={sub.labelKey} href={sub.url} target="_blank" rel="noreferrer"
-              className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center hover:border-blue-400 hover:shadow-md transition block"
-            >
-              <div className="text-blue-600 font-medium text-sm">{t(sub.labelKey)}</div>
-              <div className="text-xs text-gray-400 mt-1">🔗 {t('src_visit')}</div>
-            </a>
+            <div key={sub.labelKey} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition">
+              <div className="text-blue-600 font-medium text-sm mb-2">{t(sub.labelKey)}</div>
+              <a href={sub.url} target="_blank" rel="noreferrer"
+                className="text-xs text-blue-500 hover:text-blue-700 underline block mb-1"
+              >🔗 {t('src_visit')}</a>
+              {sub.backups?.length > 0 && (
+                <div className="border-t pt-1.5 mt-1.5">
+                  <div className="text-xs text-gray-400 mb-0.5">{t('src_backups')}</div>
+                  {sub.backups.map((b, i) => (
+                    <a key={i} href={b} target="_blank" rel="noreferrer"
+                      className="text-xs text-gray-500 hover:text-blue-600 block truncate"
+                    >└ {b.replace('https://','').replace('http://','').split('/')[0]}</a>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
