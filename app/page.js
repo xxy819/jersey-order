@@ -69,7 +69,8 @@ function LangSwitcher({ langIndex, onSwitch }) {
 
   return (
     <div className="flex items-center justify-between mb-2">
-      <div>
+      <div className="flex items-center gap-2">
+        <a href="/sourcing" className="text-xs text-gray-500 hover:text-blue-600">📦 商品图片</a>
         {user ? (
           <span className="text-xs text-gray-500">
             {user.name} · <a href="/my-orders" className="text-blue-600 hover:underline">我的订单</a> · <button onClick={logout} className="text-gray-400 hover:text-gray-600">退出</button>
