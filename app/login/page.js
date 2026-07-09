@@ -106,7 +106,7 @@ export default function LoginPage() {
               邀请码 *<span className="text-xs text-gray-400 ml-1">（198888 或 196666）</span>
             </label>
             <input type="text" value={inviteCode} onChange={e => setInviteCode(e.target.value)}
-              placeholder="请输入邀请码" required maxLength={6}
+              placeholder="请联系客服获取邀请码" required maxLength={6}
               className="w-full border rounded-lg px-3 py-2 text-sm text-center tracking-widest" />
           </div>
 
