@@ -519,20 +519,20 @@ export default function OrderPage() {
             {curProduct?.id === 'other' && (
               <>
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
-                  ⚠️ 此商品没有标价。请上传商品图片后联系客服获取价格，再填入下方价格栏。
+                  {t('other_notice')}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">价格 € *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('other_price_label')}</label>
                   <input type="number" step="0.01" min="0" value={current.customPrice}
                     onChange={e => setCurrent(p => ({ ...p, customPrice: e.target.value }))}
-                    placeholder="请向客服询问价格，输入"
+                    placeholder={t('other_price_placeholder')}
                     className="w-full border rounded-lg px-3 py-2 text-sm" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">备注</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('other_note_label')}</label>
                   <textarea value={current.customNote}
                     onChange={e => setCurrent(p => ({ ...p, customNote: e.target.value }))}
-                    placeholder="请备注你的商品，如球鞋请备注尺寸"
+                    placeholder={t('other_note_placeholder')}
                     rows={2} className="w-full border rounded-lg px-3 py-2 text-sm resize-none" />
                 </div>
               </>
