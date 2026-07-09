@@ -70,7 +70,6 @@ function LangSwitcher({ langIndex, onSwitch }) {
   return (
     <div className="flex items-center justify-between mb-2">
       <div className="flex items-center gap-2">
-        <a href="/sourcing" className="text-xs text-gray-500 hover:text-blue-600">📦 商品图片</a>
         {user ? (
           <span className="text-xs text-gray-500">
             {user.name} · <a href="/my-orders" className="text-blue-600 hover:underline">我的订单</a> · <button onClick={logout} className="text-gray-400 hover:text-gray-600">退出</button>
@@ -684,6 +683,13 @@ export default function OrderPage() {
 
         <button onClick={addToCart}
           className="mt-4 w-full bg-black text-white py-2.5 rounded-lg font-medium hover:bg-gray-800 transition">{t('add_to_cart')}</button>
+
+        {/* 商品图片参考入口 */}
+        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
+          <a href="/sourcing" className="text-sm text-blue-700 hover:text-blue-900 font-medium">
+            {t('src_tip')}
+          </a>
+        </div>
       </section>
 
       {/* ======== 购物清单 ======== */}
