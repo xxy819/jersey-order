@@ -19,7 +19,7 @@ function LangSwitcher({ langIndex, onSwitch }) {
 
 export default function AdminPage() {
   const { langIndex, changeLang, mounted } = useLang()
-  const t = useCallback((key, p) => getText(key, langIndex, p), [langIndex])
+  const t = (key, p) => getText(key, langIndex, p)
 
   const [password, setPassword] = useState('')
   const [loggedIn, setLoggedIn] = useState(false)

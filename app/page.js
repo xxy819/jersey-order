@@ -92,7 +92,7 @@ function LangSwitcher({ langIndex, onSwitch }) {
 // ======== 主页面 ========
 export default function OrderPage() {
   const { langIndex, changeLang, mounted } = useLang()
-  const t = useCallback((key, p) => getText(key, langIndex, p), [langIndex])
+  const t = (key, p) => getText(key, langIndex, p)
   const styleLabel = useCallback((id) => getStyleLabel(id, langIndex), [langIndex])
 
   const [cart, setCart] = useState([])
