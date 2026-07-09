@@ -107,6 +107,7 @@ export default function OrderPage() {
   const [proofPreview, setProofPreview] = useState(null)
   const [proofUploading, setProofUploading] = useState(false)
   const [proofUploaded, setProofUploaded] = useState(false)
+  const [selectedCat, setSelectedCat] = useState(null) // 当前选中的分类
 
   // 当前选中商品
   const curProduct = getProduct(current.productId)
@@ -462,9 +463,12 @@ export default function OrderPage() {
               <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
                 {CATEGORIES.map(cat => (
                   <button key={cat.id}
-                    onClick={() => setCurrent(p => ({ ...p, productId: '', size: '' }))}
+                    onClick={() => {
+                      setSelectedCat(prev => prev === cat.id ? null : cat.id)
+                      setCurrent(p => ({ ...p, productId: '', size: '' }))
+                    }}
                     className={`shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                      current.productId && getProduct(current.productId)?.categoryKey === cat.id
+                      selectedCat === cat.id
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
@@ -473,10 +477,7 @@ export default function OrderPage() {
               </div>
               {/* 商品按钮 */}
               {(() => {
-                const selectedCat = current.productId ? getProduct(current.productId)?.categoryKey : null
-                const catProducts = selectedCat ? getProductsByCategory(selectedCat) : []
                 if (!selectedCat) {
-                  // 没选分类时显示提示
                   return (
                     <div className="text-center py-8 text-gray-400 text-sm">
                       请先点击上方分类，再选择商品
