@@ -515,21 +515,24 @@ export default function OrderPage() {
               })()}
             </div>
 
-            {/* 其他商品：自定义价格 + 备注 */}
+            {/* 无标价商品：提示 + 自定义价格 + 备注 */}
             {curProduct?.id === 'other' && (
               <>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                  ⚠️ 此商品没有标价。请上传商品图片后联系客服获取价格，再填入下方价格栏。
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">价格 € *</label>
                   <input type="number" step="0.01" min="0" value={current.customPrice}
                     onChange={e => setCurrent(p => ({ ...p, customPrice: e.target.value }))}
-                    placeholder="输入商品价格"
+                    placeholder="请向客服询问价格，输入"
                     className="w-full border rounded-lg px-3 py-2 text-sm" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">备注</label>
                   <textarea value={current.customNote}
                     onChange={e => setCurrent(p => ({ ...p, customNote: e.target.value }))}
-                    placeholder="填写规格、尺寸等说明"
+                    placeholder="请备注你的商品，如球鞋请备注尺寸"
                     rows={2} className="w-full border rounded-lg px-3 py-2 text-sm resize-none" />
                 </div>
               </>
