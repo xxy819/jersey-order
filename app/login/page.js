@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { VALID_CODES } from '@/lib/config'
 import { useLang } from '@/lib/LangContext'
 import { getText, LANG_CODES, LANG_NAMES } from '@/lib/locales'
 
@@ -8,21 +9,36 @@ export default function LoginPage() {
   const { langIndex, changeLang, mounted } = useLang()
   const t = (key, p) => getText(key, langIndex, p)
 
-  const [mode, setMode] = useState('login') // login | register
+  const [mode, setMode] = useState('login')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
 
+  // 检查是否已有邀请码
+  useEffect(() => {
+    const saved = localStorage.getItem('invite_code')
+    if (saved) setInviteCode(saved)
+  }, [])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    // 验证邀请码
+    const code = inviteCode.trim()
+    if (!code || !VALID_CODES.includes(code)) {
+      setError('邀请码无效，请输入 198888 或 196666')
+      return
+    }
+
     setLoading(true)
 
     try {
-      const endpoint = mode === 'login' ? '/api/auth' : '/api/auth'
+      const endpoint = '/api/auth'
       const method = mode === 'login' ? 'PUT' : 'POST'
       const body = mode === 'login'
         ? { phone: phone.trim(), password }
@@ -36,15 +52,11 @@ export default function LoginPage() {
       const data = await res.json()
 
       if (data.success) {
-        if (mode === 'login') {
-          // Save token and redirect back
-          localStorage.setItem('jersey_token', data.token)
-          localStorage.setItem('jersey_user', JSON.stringify(data.user))
-          window.location.href = '/'
-        } else {
-          setSuccess(true)
-          setTimeout(() => { setMode('login'); setSuccess(false) }, 2000)
-        }
+        // 保存邀请码和登录信息
+        localStorage.setItem('invite_code', code)
+        localStorage.setItem('jersey_token', data.token)
+        localStorage.setItem('jersey_user', JSON.stringify(data.user))
+        window.location.href = '/'
       } else {
         setError(data.error || '操作失败')
       }
@@ -68,9 +80,14 @@ export default function LoginPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border p-6 w-full max-w-sm">
-        <h1 className="text-xl font-bold text-center mb-6">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold">Jersey Order</h1>
+          <p className="text-sm text-gray-500">{t('site_subtitle')}</p>
+        </div>
+
+        <h2 className="text-lg font-semibold text-center mb-4">
           {mode === 'login' ? '登录' : '注册'}
-        </h1>
+        </h2>
 
         {success && (
           <div className="bg-green-50 text-green-700 text-sm p-3 rounded-lg mb-4 text-center">
@@ -83,6 +100,16 @@ export default function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3">
+          {/* 邀请码 */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              邀请码 *<span className="text-xs text-gray-400 ml-1">（198888 或 196666）</span>
+            </label>
+            <input type="text" value={inviteCode} onChange={e => setInviteCode(e.target.value)}
+              placeholder="请输入邀请码" required maxLength={6}
+              className="w-full border rounded-lg px-3 py-2 text-sm text-center tracking-widest" />
+          </div>
+
           {mode === 'register' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">昵称</label>
@@ -100,11 +127,11 @@ export default function LoginPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
             <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="密码 (至少4位)" required minLength={4}
+              placeholder="密码（至少4位）" required minLength={4}
               className="w-full border rounded-lg px-3 py-2 text-sm" />
           </div>
           <button type="submit" disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
+            className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
             {loading ? '处理中...' : (mode === 'login' ? '登录' : '注册')}
           </button>
         </form>

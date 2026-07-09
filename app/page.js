@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { PRODUCTS, CATEGORIES, getProductsByCategory, ADDONS, CUSTOM_PRICE, calcShipping, SHIPPING_THRESHOLD, SHIPPING_FEE, getSizeOptions, getSizeChart, SIZE_CHARTS, PAYPAL_EMAIL, getProduct, calcItemPrice, calcPatchPrice, calcSizeSurcharge } from '@/lib/config'
+import { PRODUCTS, CATEGORIES, getProductsByCategory, ADDONS, CUSTOM_PRICE, calcShipping, SHIPPING_THRESHOLD, SHIPPING_FEE, getSizeOptions, SIZE_CHARTS, PAYPAL_EMAIL, getProduct, getBasePrice, getAddonPrice, calcPatchPrice, calcSizeSurcharge } from '@/lib/config'
 import { getText, getStyleLabel, LANG_CODES, LANG_NAMES } from '@/lib/locales'
 import { useLang } from '@/lib/LangContext'
 
@@ -116,7 +116,7 @@ export default function OrderPage() {
   // 当前选中附加项的总价（不含补丁，补丁单独按数量算）
   const curAddonCost = (current.addons || []).reduce((sum, aid) => {
     if (aid === 'patch') return sum
-    const a = ADDONS[aid]; return sum + (a ? a.price : 0)
+    const a = ADDONS[aid]; return sum + (a ? a.getPrice() : 0)
   }, 0)
   const curCustomCost = current.hasCustom ? CUSTOM_PRICE : 0
   const curSizeSurcharge = curProduct && curProduct.chartId ? calcSizeSurcharge(current.size, curProduct.chartId) : 0
@@ -138,7 +138,7 @@ export default function OrderPage() {
     up += calcSizeSurcharge(item.size, prod.chartId)
     for (const aid of (item.addons || [])) {
       if (aid === 'patch') up += calcPatchPrice(item.patchCount || 1)
-      else { const a = ADDONS[aid]; if (a) up += a.price }
+      else { const a = ADDONS[aid]; if (a) up += a.getPrice() }
     }
     if (item.hasCustom) up += CUSTOM_PRICE
     return sum + up * item.quantity
@@ -197,6 +197,12 @@ export default function OrderPage() {
   if (!mounted) return null
   if (langIndex < 0) return <LangSelector onSelect={changeLang} />
 
+  // 未登录则跳转登录页
+  useEffect(() => {
+    const token = localStorage.getItem('jersey_token')
+    if (!token) window.location.href = '/login'
+  }, [])
+
   // ---- 提交订单 ----
   const submitOrder = async () => {
     if (cart.length === 0) { setError(t('error_cart_empty')); return }
@@ -235,7 +241,7 @@ export default function OrderPage() {
           up += calcSizeSurcharge(item.size, prod?.chartId)
           for (const aid of (item.addons || [])) {
             if (aid === 'patch') up += calcPatchPrice(item.patchCount || 1)
-            else { const a = ADDONS[aid]; if (a) up += a.price }
+            else { const a = ADDONS[aid]; if (a) up += a.getPrice() }
           }
           if (item.hasCustom) up += CUSTOM_PRICE
         }
@@ -480,7 +486,7 @@ export default function OrderPage() {
                 if (!selectedCat) {
                   return (
                     <div className="text-center py-8 text-gray-400 text-sm">
-                      请先点击上方分类，再选择商品
+                       {t('select_product_hint')}
                     </div>
                   )
                 }
@@ -496,7 +502,7 @@ export default function OrderPage() {
                         }`}
                       >
                         <div className="font-medium">{styleLabel(p.id)}</div>
-                        <div className="text-blue-600 font-semibold mt-0.5">{p.id === 'other' ? '询价' : p.price + '€'}</div>
+                        <div className="text-blue-600 font-semibold mt-0.5">{p.id === 'other' ? '询价' : getBasePrice(p.id) + '€'}</div>
                       </button>
                     ))}
                   </div>
@@ -600,7 +606,7 @@ export default function OrderPage() {
                   <label key={aid} className="flex items-center gap-2 cursor-pointer text-sm">
                     <input type="checkbox" checked={checked}
                       onChange={() => toggleAddon(aid)} className="w-4 h-4" />
-                    <span>{t(a.labelKey)}<span className="text-orange-500"> +{a.price}€</span></span>
+                    <span>{t(a.labelKey)}<span className="text-orange-500"> +{a.getPrice()}€</span></span>
                   </label>
                 )
               })}
@@ -701,7 +707,7 @@ export default function OrderPage() {
                 up += calcSizeSurcharge(item.size, prod?.chartId)
                 for (const aid of (item.addons || [])) {
                   if (aid === 'patch') up += calcPatchPrice(item.patchCount || 1)
-                  else { const a = ADDONS[aid]; if (a) up += a.price }
+                  else { const a = ADDONS[aid]; if (a) up += a.getPrice() }
                 }
                 if (item.hasCustom) up += CUSTOM_PRICE
               }
