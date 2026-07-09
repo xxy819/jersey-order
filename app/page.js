@@ -108,6 +108,14 @@ export default function OrderPage() {
   const [proofUploading, setProofUploading] = useState(false)
   const [proofUploaded, setProofUploaded] = useState(false)
   const [selectedCat, setSelectedCat] = useState(null) // 当前选中的分类
+  const [clientReady, setClientReady] = useState(false)
+
+  // 客户端就绪 + 登录检查
+  useEffect(() => {
+    const token = localStorage.getItem('jersey_token')
+    if (!token) { window.location.href = '/login'; return }
+    setClientReady(true)
+  }, [])
 
   // 当前选中商品
   const curProduct = getProduct(current.productId)
@@ -197,11 +205,13 @@ export default function OrderPage() {
   if (!mounted) return null
   if (langIndex < 0) return <LangSelector onSelect={changeLang} />
 
-  // 未登录则跳转登录页
-  useEffect(() => {
-    const token = localStorage.getItem('jersey_token')
-    if (!token) window.location.href = '/login'
-  }, [])
+  if (!clientReady) {
+    return (
+      <div className="text-center py-16 text-gray-400">
+        <p>加载中...</p>
+      </div>
+    )
+  }
 
   // ---- 提交订单 ----
   const submitOrder = async () => {
