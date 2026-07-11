@@ -131,7 +131,7 @@ export default function OrderPage() {
   const curPatchCost = (current.addons || []).includes('patch') ? calcPatchPrice(current.patchCount || 1) : 0
   const curUnitPrice = curProduct
     ? (curProduct.id === 'other' ? (parseFloat(current.customPrice) || 0)
-      : curProduct.price + curSizeSurcharge + curAddonCost + curPatchCost + curCustomCost)
+      : getBasePrice(curProduct.id) + curSizeSurcharge + curAddonCost + curPatchCost + curCustomCost)
     : 0
   const curSubtotal = curUnitPrice * current.quantity
 
@@ -142,7 +142,7 @@ export default function OrderPage() {
     if (prod.id === 'other') {
       return sum + (parseFloat(item.customPrice) || 0) * item.quantity
     }
-    let up = prod.price
+    let up = getBasePrice(prod.id)
     up += calcSizeSurcharge(item.size, prod.chartId)
     for (const aid of (item.addons || [])) {
       if (aid === 'patch') up += calcPatchPrice(item.patchCount || 1)
@@ -244,7 +244,7 @@ export default function OrderPage() {
           const data = await res.json()
           if (data.url) patchUrl = data.url
         }
-        let up = prod ? prod.price : 0
+        let up = prod ? getBasePrice(prod.id) : 0
         if (prod?.id === 'other') {
           up = parseFloat(item.customPrice) || 0
         } else {
@@ -713,7 +713,7 @@ export default function OrderPage() {
               if (prod?.id === 'other') {
                 up = parseFloat(item.customPrice) || 0
               } else {
-                up = prod ? prod.price : 0
+                up = prod ? getBasePrice(prod.id) : 0
                 up += calcSizeSurcharge(item.size, prod?.chartId)
                 for (const aid of (item.addons || [])) {
                   if (aid === 'patch') up += calcPatchPrice(item.patchCount || 1)
