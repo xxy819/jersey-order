@@ -443,11 +443,44 @@ export default function OrderPage() {
 
   // ============ 主页面 ============
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <LangSwitcher langIndex={langIndex} onSwitch={changeLang} />
-      <div className="text-center">
-        <h1 className="text-3xl font-bold">Jersey Order</h1>
-        <p className="text-gray-500">{t('site_subtitle')}</p>
+
+      {/* 头部横幅 */}
+      <div className="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-6 text-white shadow-lg">
+        <div className="flex items-center gap-3 mb-2">
+          <span className="text-3xl">⚽</span>
+          <div>
+            <h1 className="text-2xl font-bold">Jersey Order</h1>
+            <p className="text-blue-100 text-sm">{t('site_subtitle')}</p>
+          </div>
+        </div>
+        {/* 信任标识 */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+          <div className="bg-white/10 rounded-xl p-3 text-center">
+            <div className="text-lg">🔒</div>
+            <div className="text-xs mt-1 font-medium">{t('trust_secure')}</div>
+          </div>
+          <div className="bg-white/10 rounded-xl p-3 text-center">
+            <div className="text-lg">🚚</div>
+            <div className="text-xs mt-1 font-medium">{t('trust_shipping')}</div>
+          </div>
+          <div className="bg-white/10 rounded-xl p-3 text-center">
+            <div className="text-lg">💬</div>
+            <div className="text-xs mt-1 font-medium">{t('trust_support')}</div>
+          </div>
+          <div className="bg-white/10 rounded-xl p-3 text-center">
+            <div className="text-lg">⭐</div>
+            <div className="text-xs mt-1 font-medium">{t('trust_quality')}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 操作提示 */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800 flex items-center gap-2">
+        <span>💡</span>
+        <span>{t('trust_tip')}</span>
+        <a href="/sourcing" className="text-blue-600 hover:underline shrink-0 font-medium ml-auto">{t('footer_images')} →</a>
       </div>
 
       {error && (<div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>)}
@@ -741,12 +774,6 @@ export default function OrderPage() {
         <button onClick={addToCart}
           className="mt-4 w-full bg-black text-white py-2.5 rounded-lg font-medium hover:bg-gray-800 transition">{t('add_to_cart')}</button>
 
-        {/* 商品图片参考入口 */}
-        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
-          <a href="/sourcing" className="text-sm text-blue-700 hover:text-blue-900 font-medium">
-            {t('src_tip')}
-          </a>
-        </div>
       </section>
 
       {/* ======== 购物清单 ======== */}
@@ -881,7 +908,30 @@ export default function OrderPage() {
           {submitting ? t('submitting') : t('submit_order')}</button>
       </section>
 
-      <div className="text-center text-xs text-gray-400 pb-8">{t('we_accept_paypal')}</div>
+      {/* 底部信息 */}
+      <div className="bg-white rounded-xl shadow-sm border p-5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+          <div className="text-center">
+            <div className="text-gray-400 text-xs mb-1">💳</div>
+            <div className="text-gray-600">{t('we_accept_paypal')}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-gray-400 text-xs mb-1">📦</div>
+            <a href="/sourcing" className="text-blue-600 hover:underline">{t('footer_images')}</a>
+          </div>
+          <div className="text-center">
+            <div className="text-gray-400 text-xs mb-1">📋</div>
+            <a href="/my-orders" className="text-blue-600 hover:underline">{t('footer_orders')}</a>
+          </div>
+          <div className="text-center">
+            <div className="text-gray-400 text-xs mb-1">💬</div>
+            <span className="text-gray-600">{t('footer_contact')}</span>
+          </div>
+        </div>
+        <div className="text-center text-xs text-gray-400 mt-4 pt-3 border-t">
+          {t('footer_rights')}
+        </div>
+      </div>
     </div>
   )
 }
