@@ -54,10 +54,10 @@ export default function AdminPage() {
       const data = await res.json()
       if (data.success) {
         setLoggedIn(true)
-        setOrders(data.orders || [])
-        setTotal(data.total || 0)
+        fetchOrders()
       } else {
         alert(data.error || t('admin_wrong_password'))
+        setLoading(false)
       }
     } catch (_) {
       alert(t('admin_wrong_password'))
