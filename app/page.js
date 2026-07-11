@@ -109,6 +109,7 @@ export default function OrderPage() {
   const [proofUploaded, setProofUploaded] = useState(false)
   const [selectedCat, setSelectedCat] = useState(null) // 当前选中的分类
   const [clientReady, setClientReady] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('') // 搜索关键字
 
   // 客户端就绪 + 登录检查
   useEffect(() => {
@@ -491,8 +492,56 @@ export default function OrderPage() {
                   >{t(cat.labelKey)}</button>
                 ))}
               </div>
+              {/* 搜索框 */}
+              <div className="relative mb-3">
+                <input type="text" value={searchQuery}
+                  onChange={e => {
+                    setSearchQuery(e.target.value)
+                    if (e.target.value) setSelectedCat(null)
+                  }}
+                  placeholder={t('search_placeholder')}
+                  className="w-full border rounded-lg px-3 py-2 text-sm pr-8" />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg">×</button>
+                )}
+              </div>
               {/* 商品按钮 */}
               {(() => {
+                // 搜索模式：在所有商品中匹配
+                if (searchQuery.trim()) {
+                  const q = searchQuery.trim().toLowerCase()
+                  const matched = PRODUCTS.filter(p => {
+                    const name = styleLabel(p.id).toLowerCase()
+                    const catName = t(getProduct(p.id)?.categoryKey || '').toLowerCase()
+                    return name.includes(q) || catName.includes(q)
+                  })
+                  if (matched.length === 0) {
+                    return <div className="text-center py-8 text-gray-400 text-sm">{t('search_no_result')}</div>
+                  }
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {matched.map(p => {
+                        const cat = CATEGORIES.find(c => c.id === p.categoryKey)
+                        return (
+                          <button key={p.id}
+                            onClick={() => setCurrent(prev => ({ ...prev, productId: p.id, size: '' }))}
+                            className={`border rounded-lg px-3 py-2.5 text-left text-sm transition ${
+                              current.productId === p.id
+                                ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500'
+                                : 'border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <div className="font-medium">{styleLabel(p.id)}</div>
+                            <div className="text-blue-600 font-semibold mt-0.5">{p.id === 'other' ? '询价' : getBasePrice(p.id) + '€'}</div>
+                            {cat && <div className="text-xs text-gray-400 mt-0.5">{t(cat.labelKey)}</div>}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )
+                }
+                // 分类模式
                 if (!selectedCat) {
                   return (
                     <div className="text-center py-8 text-gray-400 text-sm">
